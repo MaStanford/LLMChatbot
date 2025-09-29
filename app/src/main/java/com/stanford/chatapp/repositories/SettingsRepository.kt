@@ -15,15 +15,21 @@ class SettingsRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>
 ) {
     private object PreferencesKeys {
-        val SELECTED_LLM_MODEL = stringPreferencesKey("selected_llm_model")
+        val SELECTED_LLM_PROVIDER = stringPreferencesKey("selected_llm_provider")
         val ACTIVE_SESSION_ID = stringPreferencesKey("active_session_id")
         val THEME = stringPreferencesKey("theme")
+
         val GEMINI_API_KEY = stringPreferencesKey("gemini_api_key")
         val OPENAI_API_KEY = stringPreferencesKey("openai_api_key")
-        val XAI_API_KEY = stringPreferencesKey("xai_api_key")
+        val GROK_API_KEY = stringPreferencesKey("grok_api_key")
+
         val GEMINI_CONTEXT_LENGTH_LIMIT = intPreferencesKey("gemini_context_length_limit")
         val OPENAI_CONTEXT_LENGTH_LIMIT = intPreferencesKey("openai_context_length_limit")
-        val XAI_CONTEXT_LENGTH_LIMIT = intPreferencesKey("xai_context_length_limit")
+        val GROK_CONTEXT_LENGTH_LIMIT = intPreferencesKey("grok_context_length_limit")
+
+        val GEMINI_MODEL = stringPreferencesKey("gemini_model")
+        val OPENAI_MODEL = stringPreferencesKey("openai_model")
+        val GROK_MODEL = stringPreferencesKey("grok_model")
     }
 
     val geminiContextLengthLimit: Flow<Int> = dataStore.data.map { preferences ->
@@ -46,13 +52,13 @@ class SettingsRepository @Inject constructor(
         }
     }
 
-    val xaiContextLengthLimit: Flow<Int> = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.XAI_CONTEXT_LENGTH_LIMIT] ?: 8000
+    val grokContextLengthLimit: Flow<Int> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.GROK_CONTEXT_LENGTH_LIMIT] ?: 8000
     }
 
-    suspend fun setXaiContextLengthLimit(limit: Int) {
+    suspend fun setGrokContextLengthLimit(limit: Int) {
         dataStore.edit { preferences ->
-            preferences[PreferencesKeys.XAI_CONTEXT_LENGTH_LIMIT] = limit
+            preferences[PreferencesKeys.GROK_CONTEXT_LENGTH_LIMIT] = limit
         }
     }
 
@@ -66,13 +72,13 @@ class SettingsRepository @Inject constructor(
         }
     }
 
-    val selectedLlmModel: Flow<String> = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.SELECTED_LLM_MODEL] ?: "gemini-1.5-pro"
+    val selectedLlmProvider: Flow<String> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.SELECTED_LLM_PROVIDER] ?: "Gemini"
     }
 
-    suspend fun setSelectedLlmModel(modelName: String) {
+    suspend fun setSelectedLlmProvider(providerName: String) {
         dataStore.edit { preferences ->
-            preferences[PreferencesKeys.SELECTED_LLM_MODEL] = modelName
+            preferences[PreferencesKeys.SELECTED_LLM_PROVIDER] = providerName
         }
     }
 
@@ -106,17 +112,47 @@ class SettingsRepository @Inject constructor(
         }
     }
 
-    val xaiApiKey: Flow<String> = dataStore.data.map { preferences ->
-        preferences[PreferencesKeys.XAI_API_KEY] ?: ""
+    val grokApiKey: Flow<String> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.GROK_API_KEY] ?: ""
     }
 
-    suspend fun setXaiApiKey(apiKey: String) {
+    suspend fun setGrokApiKey(apiKey: String) {
         dataStore.edit { preferences ->
-            preferences[PreferencesKeys.XAI_API_KEY] = apiKey
+            preferences[PreferencesKeys.GROK_API_KEY] = apiKey
         }
     }
 
-    fun getAvailableLlmModels(): List<String> {
-        return listOf("gemini-1.5-pro", "gpt-4", "xai")
+    val geminiModel: Flow<String> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.GEMINI_MODEL] ?: "gemini-2.5-pro"
+    }
+
+    suspend fun setGeminiModel(model: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.GEMINI_MODEL] = model
+        }
+    }
+
+    val openAiModel: Flow<String> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.OPENAI_MODEL] ?: "gpt-4"
+    }
+
+    suspend fun setOpenAiModel(model: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.OPENAI_MODEL] = model
+        }
+    }
+
+    val grokModel: Flow<String> = dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.GROK_MODEL] ?: "grok-3"
+    }
+
+    suspend fun setGrokModel(model: String) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.GROK_MODEL] = model
+        }
+    }
+
+    fun getAvailableLlmProviders(): List<String> {
+        return listOf("Gemini", "OpenAI", "Grok")
     }
 }

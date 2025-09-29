@@ -68,7 +68,8 @@ class GeminiApiServiceImpl @Inject constructor(
             return@flow
         }
 
-        val url = "https://generativelanguage.googleapis.com/v1beta/models/${request.model}:streamGenerateContent?key=$apiKey"
+        val url = "https://generativelanguage.googleapis.com/v1beta/models/${request.model}:streamGenerateContent"
+        Log.d("GeminiApiService", "Request URL: $url")
 
         val mappedMessages = request.messages
             .filter { it.role == "user" || it.role == "assistant" }
@@ -83,10 +84,11 @@ class GeminiApiServiceImpl @Inject constructor(
 
         val httpRequest = Request.Builder()
             .url(url)
+            .addHeader("x-goog-api-key", apiKey)
             .post(requestBody.toRequestBody("application/json".toMediaType()))
             .build()
 
-        val response = okhttp3.OkHttpClient().newCall(httpRequest).execute()
+        val response = okHttpClient.newCall(httpRequest).execute()
 
         if (!response.isSuccessful) {
             throw IOException("Unexpected code ${response.code}: ${response.message}")

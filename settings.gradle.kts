@@ -20,5 +20,5 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "LLM Chatapp"
+rootProject.name = "Stanford Chatapp"
 include(":app")

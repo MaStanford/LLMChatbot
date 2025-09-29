@@ -14,7 +14,7 @@ import com.stanford.chatapp.data.local.SessionDao
 import com.stanford.chatapp.data.remote.ChatApiService
 import com.stanford.chatapp.data.remote.GeminiApiServiceImpl
 import com.stanford.chatapp.data.remote.OpenAiApiService
-import com.stanford.chatapp.data.remote.XaiApiService
+import com.stanford.chatapp.data.remote.GrokApiService
 import com.stanford.chatapp.repositories.SettingsRepository
 import dagger.Module
 import dagger.Provides
@@ -52,8 +52,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    @XaiApi
-    fun provideXaiApiService(xaiApiService: XaiApiService): ChatApiService = xaiApiService
+    @GrokApi
+    fun provideGrokApiService(grokApiService: GrokApiService): ChatApiService = grokApiService
 
     @Provides
     @Singleton
@@ -62,6 +62,9 @@ object AppModule {
         logging.setLevel(HttpLoggingInterceptor.Level.HEADERS)
         return OkHttpClient.Builder()
             .addInterceptor(logging)
+            .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+            .callTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .build()
     }
 
@@ -73,6 +76,10 @@ object AppModule {
                 json(Json {
                     ignoreUnknownKeys = true
                 })
+            }
+            engine {
+                connectTimeout = 30 * 1000
+                socketTimeout = 30 * 1000
             }
         }
     }

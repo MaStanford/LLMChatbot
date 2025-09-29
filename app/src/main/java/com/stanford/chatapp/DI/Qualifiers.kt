@@ -12,4 +12,4 @@ annotation class GeminiApi
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class XaiApi
+annotation class GrokApi

@@ -21,11 +21,87 @@ class SettingsViewModel @Inject constructor(
         "SYSTEM_DEFAULT"
     )
 
+    val selectedLlmProvider = settingsRepository.selectedLlmProvider.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        "Gemini"
+    )
+
     val geminiApiKey = settingsRepository.geminiApiKey.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
         ""
     )
+
+    fun setSelectedLlmProvider(provider: String) {
+        viewModelScope.launch {
+            settingsRepository.setSelectedLlmProvider(provider)
+        }
+    }
+
+
+    fun setGeminiApiKey(apiKey: String) {
+        viewModelScope.launch {
+            Log.d("SettingsViewModel", "Saving Gemini API Key: $apiKey")
+            settingsRepository.setGeminiApiKey(apiKey)
+        }
+    }
+
+    fun setOpenAiApiKey(apiKey: String) {
+        viewModelScope.launch {
+            Log.d("SettingsViewModel", "Saving OpenAI API Key: $apiKey")
+            settingsRepository.setOpenAiApiKey(apiKey)
+        }
+    }
+
+    fun setGrokApiKey(apiKey: String) {
+        viewModelScope.launch {
+            Log.d("SettingsViewModel", "Saving Grok API Key: $apiKey")
+            settingsRepository.setGrokApiKey(apiKey)
+        }
+    }
+
+    fun setGeminiContextLengthLimit(limit: Int) {
+        viewModelScope.launch {
+            settingsRepository.setGeminiContextLengthLimit(limit)
+        }
+    }
+
+    fun setOpenAiContextLengthLimit(limit: Int) {
+        viewModelScope.launch {
+            settingsRepository.setOpenAiContextLengthLimit(limit)
+        }
+    }
+
+    fun setGrokContextLengthLimit(limit: Int) {
+        viewModelScope.launch {
+            settingsRepository.setGrokContextLengthLimit(limit)
+        }
+    }
+
+    fun setGeminiModel(model: String) {
+        viewModelScope.launch {
+            settingsRepository.setGeminiModel(model)
+        }
+    }
+
+    fun setOpenAiModel(model: String) {
+        viewModelScope.launch {
+            settingsRepository.setOpenAiModel(model)
+        }
+    }
+
+    fun setGrokModel(model: String) {
+        viewModelScope.launch {
+            settingsRepository.setGrokModel(model)
+        }
+    }
+
+    fun setTheme(theme: String) {
+        viewModelScope.launch {
+            settingsRepository.setTheme(theme)
+        }
+    }
 
     val openAiApiKey = settingsRepository.openAiApiKey.stateIn(
         viewModelScope,
@@ -33,7 +109,7 @@ class SettingsViewModel @Inject constructor(
         ""
     )
 
-    val xaiApiKey = settingsRepository.xaiApiKey.stateIn(
+    val grokApiKey = settingsRepository.grokApiKey.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
         ""
@@ -51,54 +127,27 @@ class SettingsViewModel @Inject constructor(
         8000
     )
 
-    val xaiContextLengthLimit = settingsRepository.xaiContextLengthLimit.stateIn(
+    val grokContextLengthLimit = settingsRepository.grokContextLengthLimit.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
         8000
     )
 
-    fun setTheme(theme: String) {
-        viewModelScope.launch {
-            settingsRepository.setTheme(theme)
-        }
-    }
+    val geminiModel = settingsRepository.geminiModel.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        "gemini-2.5-pro"
+    )
 
-    fun setGeminiApiKey(apiKey: String) {
-        viewModelScope.launch {
-            Log.d("SettingsViewModel", "Saving Gemini API Key: $apiKey")
-            settingsRepository.setGeminiApiKey(apiKey)
-        }
-    }
+    val openAiModel = settingsRepository.openAiModel.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        "gpt-4"
+    )
 
-    fun setOpenAiApiKey(apiKey: String) {
-        viewModelScope.launch {
-            Log.d("SettingsViewModel", "Saving OpenAI API Key: $apiKey")
-            settingsRepository.setOpenAiApiKey(apiKey)
-        }
-    }
-
-    fun setXaiApiKey(apiKey: String) {
-        viewModelScope.launch {
-            Log.d("SettingsViewModel", "Saving XAI API Key: $apiKey")
-            settingsRepository.setXaiApiKey(apiKey)
-        }
-    }
-
-    fun setGeminiContextLengthLimit(limit: Int) {
-        viewModelScope.launch {
-            settingsRepository.setGeminiContextLengthLimit(limit)
-        }
-    }
-
-    fun setOpenAiContextLengthLimit(limit: Int) {
-        viewModelScope.launch {
-            settingsRepository.setOpenAiContextLengthLimit(limit)
-        }
-    }
-
-    fun setXaiContextLengthLimit(limit: Int) {
-        viewModelScope.launch {
-            settingsRepository.setXaiContextLengthLimit(limit)
-        }
-    }
+    val grokModel = settingsRepository.grokModel.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        "grok-3"
+    )
 }

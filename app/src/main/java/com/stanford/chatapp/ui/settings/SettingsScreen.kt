@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -40,12 +39,19 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val theme by viewModel.theme.collectAsState()
+    val selectedProvider by viewModel.selectedLlmProvider.collectAsState()
+
     val geminiApiKey by viewModel.geminiApiKey.collectAsState()
     val openAiApiKey by viewModel.openAiApiKey.collectAsState()
-    val xaiApiKey by viewModel.xaiApiKey.collectAsState()
+    val grokApiKey by viewModel.grokApiKey.collectAsState()
+
     val geminiContextLengthLimit by viewModel.geminiContextLengthLimit.collectAsState()
     val openAiContextLengthLimit by viewModel.openAiContextLengthLimit.collectAsState()
-    val xaiContextLengthLimit by viewModel.xaiContextLengthLimit.collectAsState()
+    val grokContextLengthLimit by viewModel.grokContextLengthLimit.collectAsState()
+
+    val geminiModel by viewModel.geminiModel.collectAsState()
+    val openAiModel by viewModel.openAiModel.collectAsState()
+    val grokModel by viewModel.grokModel.collectAsState()
 
     Scaffold(
         topBar = {
@@ -70,36 +76,167 @@ fun SettingsScreen(
                 selectedTheme = theme,
                 onThemeSelected = { viewModel.setTheme(it) }
             )
-            ApiKeyEditor(
-                apiKeyName = "Gemini API Key",
-                apiKey = geminiApiKey,
-                onApiKeyChanged = { viewModel.setGeminiApiKey(it) }
+
+            ProviderSelector(
+                providers = modelProviders.map { it.name },
+                selectedProvider = selectedProvider,
+                onProviderSelected = {
+                    viewModel.setSelectedLlmProvider(it)
+                }
             )
-            ApiKeyEditor(
-                apiKeyName = "Gemini Context Length Limit",
-                apiKey = geminiContextLengthLimit.toString(),
-                onApiKeyChanged = { viewModel.setGeminiContextLengthLimit(it.toIntOrNull() ?: 0) }
+
+            when (selectedProvider) {
+                "Gemini" -> {
+                    ProviderSettings(
+                        providerName = "Gemini",
+                        apiKey = geminiApiKey,
+                        onApiKeyChanged = { viewModel.setGeminiApiKey(it) },
+                        contextLimit = geminiContextLengthLimit,
+                        onContextLimitChanged = { viewModel.setGeminiContextLengthLimit(it) },
+                        model = geminiModel,
+                        onModelChanged = { viewModel.setGeminiModel(it) }
+                    )
+                }
+                "OpenAI" -> {
+                    ProviderSettings(
+                        providerName = "OpenAI",
+                        apiKey = openAiApiKey,
+                        onApiKeyChanged = { viewModel.setOpenAiApiKey(it) },
+                        contextLimit = openAiContextLengthLimit,
+                        onContextLimitChanged = { viewModel.setOpenAiContextLengthLimit(it) },
+                        model = openAiModel,
+                        onModelChanged = { viewModel.setOpenAiModel(it) }
+                    )
+                }
+                "Grok" -> {
+                    ProviderSettings(
+                        providerName = "Grok",
+                        apiKey = grokApiKey,
+                        onApiKeyChanged = { viewModel.setGrokApiKey(it) },
+                        contextLimit = grokContextLengthLimit,
+                        onContextLimitChanged = { viewModel.setGrokContextLengthLimit(it) },
+                        model = grokModel,
+                        onModelChanged = { viewModel.setGrokModel(it) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProviderSettings(
+    providerName: String,
+    apiKey: String,
+    onApiKeyChanged: (String) -> Unit,
+    contextLimit: Int,
+    onContextLimitChanged: (Int) -> Unit,
+    model: String,
+    onModelChanged: (String) -> Unit
+) {
+    val standardModels = modelProviders.find { it.name == providerName }?.models ?: emptyList()
+    val fullModelList = standardModels + "Custom"
+    val isCustom = model !in standardModels
+    val dropdownSelection = if (isCustom) "Custom" else model
+
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        ApiKeyEditor(
+            apiKeyName = "API Key",
+            apiKey = apiKey,
+            onApiKeyChanged = onApiKeyChanged
+        )
+        ApiKeyEditor(
+            apiKeyName = "Context Length Limit",
+            apiKey = contextLimit.toString(),
+            onApiKeyChanged = { onContextLimitChanged(it.toIntOrNull() ?: 0) }
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Model")
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded }
+            ) {
+                OutlinedTextField(
+                    value = dropdownSelection,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.menuAnchor()
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    fullModelList.forEach { modelName ->
+                        DropdownMenuItem(
+                            text = { Text(modelName) },
+                            onClick = {
+                                onModelChanged(modelName)
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        if (dropdownSelection == "Custom") {
+            OutlinedTextField(
+                value = if (isCustom) model else "",
+                onValueChange = onModelChanged,
+                label = { Text("Custom Model Name") },
+                modifier = Modifier.fillMaxWidth()
             )
-            ApiKeyEditor(
-                apiKeyName = "OpenAI API Key",
-                apiKey = openAiApiKey,
-                onApiKeyChanged = { viewModel.setOpenAiApiKey(it) }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProviderSelector(
+    providers: List<String>,
+    selectedProvider: String,
+    onProviderSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text("LLM Provider")
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                value = selectedProvider,
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier.menuAnchor()
             )
-            ApiKeyEditor(
-                apiKeyName = "OpenAI Context Length Limit",
-                apiKey = openAiContextLengthLimit.toString(),
-                onApiKeyChanged = { viewModel.setOpenAiContextLengthLimit(it.toIntOrNull() ?: 0) }
-            )
-            ApiKeyEditor(
-                apiKeyName = "XAI API Key",
-                apiKey = xaiApiKey,
-                onApiKeyChanged = { viewModel.setXaiApiKey(it) }
-            )
-            ApiKeyEditor(
-                apiKeyName = "XAI Context Length Limit",
-                apiKey = xaiContextLengthLimit.toString(),
-                onApiKeyChanged = { viewModel.setXaiContextLengthLimit(it.toIntOrNull() ?: 0) }
-            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                providers.forEach { provider ->
+                    DropdownMenuItem(
+                        text = { Text(provider) },
+                        onClick = {
+                            onProviderSelected(provider)
+                            expanded = false
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -162,7 +299,7 @@ fun ApiKeyEditor(
             value = apiKey,
             onValueChange = onApiKeyChanged,
             modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Enter your API key") }
+            placeholder = { Text("Enter your $apiKeyName") }
         )
     }
 }

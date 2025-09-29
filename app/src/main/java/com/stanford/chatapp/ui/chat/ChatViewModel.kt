@@ -69,21 +69,21 @@ class ChatViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    val availableLlmModels = settingsRepository.getAvailableLlmModels()
+    val availableLlmProviders = settingsRepository.getAvailableLlmProviders()
 
-    val selectedLlmModel = settingsRepository.selectedLlmModel.stateIn(
+    val selectedLlmProvider = settingsRepository.selectedLlmProvider.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
-        "gemini-1.5-pro"
+        "Gemini"
     )
 
     fun onUserInputChanged(input: String) {
         userInput.value = input
     }
 
-    fun setSelectedLlmModel(modelName: String) {
+    fun setSelectedLlmProvider(providerName: String) {
         viewModelScope.launch {
-            settingsRepository.setSelectedLlmModel(modelName)
+            settingsRepository.setSelectedLlmProvider(providerName)
         }
     }
 
@@ -110,40 +110,47 @@ class ChatViewModel @Inject constructor(
                 Log.d("ChatViewModel", "User message inserted into DB")
                 userInput.value = ""
 
-                val selectedModel = selectedLlmModel.first()
-                Log.d("ChatViewModel", "Selected model: $selectedModel")
+                val selectedProvider = selectedLlmProvider.first()
+                Log.d("ChatViewModel", "Selected provider: $selectedProvider")
 
-                val apiKey = when (selectedModel) {
-                    "gemini-1.5-pro" -> settingsRepository.geminiApiKey.first()
-                    "gpt-4" -> settingsRepository.openAiApiKey.first()
-                    "xai" -> settingsRepository.xaiApiKey.first()
+                val apiKey = when (selectedProvider) {
+                    "Gemini" -> settingsRepository.geminiApiKey.first()
+                    "OpenAI" -> settingsRepository.openAiApiKey.first()
+                    "Grok" -> settingsRepository.grokApiKey.first()
                     else -> ""
                 }
                 Log.d("ChatViewModel", "Retrieved API Key: '$apiKey'")
 
+                val model = when (selectedProvider) {
+                    "Gemini" -> settingsRepository.geminiModel.first()
+                    "OpenAI" -> settingsRepository.openAiModel.first()
+                    "Grok" -> settingsRepository.grokModel.first()
+                    else -> ""
+                }
+
                 if (apiKey.isBlank()) {
-                    Log.e("ChatViewModel", "API key for $selectedModel is blank")
+                    Log.e("ChatViewModel", "API key for $selectedProvider is blank")
                     val errorMessage = ChatMessage(
                         sessionId = sessionId,
                         role = "error",
-                        content = "API key for $selectedModel is not set. Please set it in the settings."
+                        content = "API key for $selectedProvider is not set. Please set it in the settings."
                     )
                     chatMessageDao.insertMessage(errorMessage)
                     return@launch
                 }
                 Log.d("ChatViewModel", "API key is present")
 
-                val contextLimit = when (selectedModel) {
-                    "gemini-1.5-pro" -> settingsRepository.geminiContextLengthLimit.first()
-                    "gpt-4" -> settingsRepository.openAiContextLengthLimit.first()
-                    "xai" -> settingsRepository.xaiContextLengthLimit.first()
+                val contextLimit = when (selectedProvider) {
+                    "Gemini" -> settingsRepository.geminiContextLengthLimit.first()
+                    "OpenAI" -> settingsRepository.openAiContextLengthLimit.first()
+                    "Grok" -> settingsRepository.grokContextLengthLimit.first()
                     else -> 8000 // Default fallback
                 }
                 var currentContextLength = 0
                 val limitedHistory = mutableListOf<ApiChatMessage>()
 
                 // Add messages from the end until the context limit is reached
-                for (message in messages.value.reversed()) {
+                for (message in messages.value.reversed().filter { it.role != "error" }) {
                     if (currentContextLength + message.content.length > contextLimit) {
                         break
                     }
@@ -151,12 +158,16 @@ class ChatViewModel @Inject constructor(
                     currentContextLength += message.content.length
                 }
 
-                // Reverse the list to restore chronological order and add the new message
-                val chatHistory = limitedHistory.reversed()
-                    .plus(ApiChatMessage("user", messageText))
+                // Reverse the list to restore chronological order
+                var chatHistory = limitedHistory.reversed()
+
+                // Ensure the new message is present, but not duplicated, to handle race condition.
+                if (chatHistory.isEmpty() || chatHistory.last().content != messageText) {
+                    chatHistory = chatHistory.plus(ApiChatMessage("user", messageText))
+                }
 
                 val request = ChatRequest(
-                    model = selectedModel,
+                    model = model,
                     messages = chatHistory
                 )
 

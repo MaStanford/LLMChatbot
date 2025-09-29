@@ -56,17 +56,17 @@ fun ChatScreen(
 ) {
     val messages by viewModel.messages.collectAsState()
     val userInput by viewModel.userInput
-    val availableLlmModels = viewModel.availableLlmModels
-    val selectedLlmModel by viewModel.selectedLlmModel.collectAsState()
+    val availableLlmProviders = viewModel.availableLlmProviders
+    val selectedLlmProvider by viewModel.selectedLlmProvider.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    LlmSelector(
-                        models = availableLlmModels,
-                        selectedModel = selectedLlmModel,
-                        onModelSelected = { viewModel.setSelectedLlmModel(it) }
+                    ProviderSelector(
+                        providers = availableLlmProviders,
+                        selectedProvider = selectedLlmProvider,
+                        onProviderSelected = { viewModel.setSelectedLlmProvider(it) }
                     )
                 },
                 navigationIcon = {
@@ -108,10 +108,10 @@ fun ChatScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LlmSelector(
-    models: List<String>,
-    selectedModel: String,
-    onModelSelected: (String) -> Unit
+fun ProviderSelector(
+    providers: List<String>,
+    selectedProvider: String,
+    onProviderSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -120,7 +120,7 @@ fun LlmSelector(
         onExpandedChange = { expanded = !expanded }
     ) {
         OutlinedTextField(
-            value = selectedModel,
+            value = selectedProvider,
             onValueChange = {},
             readOnly = true,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -130,11 +130,11 @@ fun LlmSelector(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            models.forEach { model ->
+            providers.forEach { provider ->
                 DropdownMenuItem(
-                    text = { Text(model) },
+                    text = { Text(provider) },
                     onClick = {
-                        onModelSelected(model)
+                        onProviderSelected(provider)
                         expanded = false
                     }
                 )
